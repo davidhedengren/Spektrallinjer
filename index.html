@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <title>Spektroskopi – Diffraktionsgitter</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+  <style>
+    body {
+      background: #111;
+      color: #eee;
+      font-family: sans-serif;
+      text-align: center;
+    }
+    #controls {
+      padding: 10px;
+      background: #222;
+    }
+  </style>
+</head>
+<body>
+  <h1>Spektroskopi – Diffraktionsgitter</h1>
+  <div id="controls">
+    <label for="elementSelect">Välj ämne:</label>
+    <select id="elementSelect">
+      <option value="hydrogen">Väte</option>
+      <option value="helium">Helium</option>
+      <option value="lithium">Litium</option>
+      <option value="sodium">Natrium</option>
+      <option value="magnesium">Magnesium</option>
+      <option value="calcium">Kalcium</option>
+      <option value="mercury">Kvicksilver</option>
+      <option value="neon">Neon</option>
+      <option value="argon">Argon</option>
+      <option value="krypton">Krypton</option>
+      <option value="xenon">Xenon</option>
+      <option value="cesium">Cesium</option>
+      <option value="barium">Barium</option>
+      <option value="aluminum">Aluminium</option>
+      <option value="silicon">Kisel</option>
+      <option value="iron">Järn</option>
+      <option value="copper">Koppar</option>
+      <option value="zinc">Zink</option>
+      <option value="nickel">Nickel</option>
+    </select>
+    <br>
+    <label for="gitterSlider">Gitterkonstant (d):</label>
+    <input type="range" id="gitterSlider" min="5" max="6000" value="1000" step="5">
+    <span id="gitterValue">1000</span> nm
+    <br>
+    <label for="orderSlider">Ordning:</label>
+    <input type="range" id="orderSlider" min="1" max="3" value="1" step="1">
+    <span id="orderValue">1</span>
+    <br>
+    <label for="tiltSlider">Gittervinkel (grader):</label>
+    <input type="range" id="tiltSlider" min="-10" max="10" value="0" step="0.1">
+    <span id="tiltValue">0</span>
+  </div>
+
+  <script>
+    /* Spektratabell: Värden hämtade från trovärdiga källor (t.ex. NIST Atomic Spectra Database) */
+    const spectra = {
+      hydrogen: [
+        { wavelength: 397 },
+        { wavelength: 410 },
+        { wavelength: 434 },
+        { wavelength: 486 },
+        { wavelength: 656 }
+      ],
+      helium: [
+        { wavelength: 447 },
+        { wavelength: 468 },
+        { wavelength: 501 },
+        { wavelength: 587 },
+        { wavelength: 668 }
+      ],
+      lithium: [{ wavelength: 670.8 }],
+      sodium: [
+        { wavelength: 589.0 },
+        { wavelength: 589.6 }
+      ],
+      magnesium: [{ wavelength: 516.7 }],
+      calcium: [
+        { wavelength: 393.4 },
+        { wavelength: 396.8 }
+      ],
+      mercury: [
+        { wavelength: 404.7 },
+        { wavelength: 435.8 },
+        { wavelength: 546.1 },
+        { wavelength: 577.0 },
+        { wavelength: 579.1 }
+      ],
+      neon: [
+        { wavelength: 585.2 },
+        { wavelength: 614.3 },
+        { wavelength: 640.2 }
+      ],
+      argon: [
+        { wavelength: 696.5 },
+        { wavelength: 706.7 }
+      ],
+      krypton: [
+        { wavelength: 415.3 },
+        { wavelength: 435.5 },
+        { wavelength: 605.0 },
+        { wavelength: 710.0 }
+      ],
+      xenon: [
+        { wavelength: 467.0 },
+        { wavelength: 484.0 },
+        { wavelength: 529.0 },
+        { wavelength: 601.0 },
+        { wavelength: 636.0 }
+      ],
+      cesium: [
+        { wavelength: 852.1 },
+        { wavelength: 894.3 }
+      ],
+      barium: [
+        { wavelength: 455.4 },
+        { wavelength: 493.4 }
+      ],
+      aluminum: [{ wavelength: 396.15 }],
+      silicon: [{ wavelength: 390.6 }],
+      iron: [
+        { wavelength: 438.3 },
+        { wavelength: 527.0 },
+        { wavelength: 532.8 }
+      ],
+      copper: [{ wavelength: 510.5 }],
+      zinc: [{ wavelength: 468.0 }],
+      nickel: [{ wavelength: 508.0 }]
+    };
+
+    let currentElement = "hydrogen";
+    let elementLines = [];
+    let gitterKonstant = 1000;
+    let maxOrder = 1; // Visa initialt endast första ordningen
+    // Gitterpositionen är fast
+    const gitterX = 300;
+    
+    // Variabel för gittervinkeln (i grader)
+    let tiltAngleDeg = 0;
+
+    // Ökad canvas-höjd så att hela våglängdsskalan med markeringsremsa syns
+    const canvasWidth = 800, canvasHeight = 600;
+    const lampX = 100, screenX = 700;
+    const L = 400;
+
+    function setup() {
+      createCanvas(canvasWidth, canvasHeight);
+      updateElementLines();
+
+      document.getElementById("elementSelect").addEventListener("change", function() {
+        currentElement = this.value;
+        updateElementLines();
+      });
+
+      document.getElementById("gitterSlider").addEventListener("input", function() {
+        gitterKonstant = parseInt(this.value);
+        document.getElementById("gitterValue").innerText = gitterKonstant;
+      });
+
+      document.getElementById("orderSlider").addEventListener("input", function() {
+        maxOrder = parseInt(this.value);
+        document.getElementById("orderValue").innerText = maxOrder;
+      });
+      
+      document.getElementById("tiltSlider").addEventListener("input", function() {
+        tiltAngleDeg = parseFloat(this.value);
+        document.getElementById("tiltValue").innerText = tiltAngleDeg;
+      });
+    }
+
+    function updateElementLines() {
+      elementLines = spectra[currentElement] || [];
+    }
+
+    // Beräknar en representativ färg för lampan baserat på de spektrala linjernas färger.
+    function computeLampColor() {
+      let rTotal = 0, gTotal = 0, bTotal = 0;
+      let n = elementLines.length;
+      if (n === 0) return color(255, 204, 0); // fallback
+      for (let lineData of elementLines) {
+        let c = wavelengthToColor(lineData.wavelength);
+        rTotal += red(c);
+        gTotal += green(c);
+        bTotal += blue(c);
+      }
+      return color(rTotal / n, gTotal / n, bTotal / n);
+    }
+
+    function draw() {
+      background(20);
+      drawLamp();
+      drawGitter();
+      drawStrålar();
+      drawDiffractionPatterns();
+      drawCentralMax();
+      drawWavelengthScale();
+
+      // Visa aktuell ordning i övre högra hörnet
+      fill(255);
+      noStroke();
+      textSize(16);
+      textAlign(RIGHT, TOP);
+      text("Visar upp till ordning: " + maxOrder, canvasWidth - 10, 10);
+    }
+
+    function drawLamp() {
+      let lampColor = computeLampColor();
+      fill(lampColor);
+      ellipse(lampX, 250, 50, 50);
+    }
+
+    function drawGitter() {
+      fill(150);
+      rect(gitterX, 200, 10, 100);
+    }
+
+    // Rita strålar med separata beräkningar för övre respektive nedre diffraktionsvinkel
+    function drawStrålar() {
+      strokeWeight(2);
+      for (let lineData of elementLines) {
+        let lambda = lineData.wavelength;
+        let spectralColor = wavelengthToColor(lambda);
+        // Rita strålen från lampan till gittret
+        stroke(spectralColor);
+        line(lampX + 25, 250, gitterX, 250);
+        
+        for (let m = 1; m <= maxOrder; m++) {
+          let ratio = (m * lambda) / gitterKonstant;
+          if (ratio > 1) continue;
+          let theta = asin(ratio);
+          // Separat beräkning:
+          let thetaUpper = theta + tiltAngleDeg * (PI / 180);
+          let thetaLower = theta - tiltAngleDeg * (PI / 180);
+          let yOffsetUpper = tan(thetaUpper) * L;
+          let yOffsetLower = tan(thetaLower) * L;
+          let yCenter = 250;
+          line(gitterX, 250, screenX, yCenter - yOffsetUpper);
+          line(gitterX, 250, screenX, yCenter + yOffsetLower);
+        }
+      }
+    }
+
+    function drawDiffractionPatterns() {
+      strokeWeight(3);
+      for (let lineData of elementLines) {
+        let lambda = lineData.wavelength;
+        let spectralColor = wavelengthToColor(lambda);
+        for (let m = 1; m <= maxOrder; m++) {
+          let ratio = (m * lambda) / gitterKonstant;
+          if (ratio > 1) continue;
+          let theta = asin(ratio);
+          let thetaUpper = theta + tiltAngleDeg * (PI / 180);
+          let thetaLower = theta - tiltAngleDeg * (PI / 180);
+          let yOffsetUpper = tan(thetaUpper) * L;
+          let yOffsetLower = tan(thetaLower) * L;
+          let yCenter = 250;
+          stroke(spectralColor);
+          line(screenX, yCenter - yOffsetUpper, canvasWidth, yCenter - yOffsetUpper);
+          line(screenX, yCenter + yOffsetLower, canvasWidth, yCenter + yOffsetLower);
+        }
+      }
+    }
+
+    // Centralmaximum (m = 0) ritas med lampans färg.
+    function drawCentralMax() {
+      let lampColor = computeLampColor();
+      stroke(lampColor);
+      strokeWeight(4);
+      let yCenter = 250;
+      line(screenX, yCenter, canvasWidth, yCenter);
+    }
+
+    // Ritning av våglängdsskalan
+    function drawWavelengthScale() {
+      let scaleHeight = 50;
+      let scaleY = 460;
+      let wlMin = 250, wlMax = 1000;
+
+      // --- Övre remsa: regnbågsspektrum (svart utanför 380–750 nm) ---
+      for (let x = 0; x < canvasWidth; x++) {
+        let wl = map(x, 0, canvasWidth, wlMin, wlMax);
+        stroke(wavelengthToColor(wl));
+        line(x, scaleY, x, scaleY + scaleHeight);
+      }
+      
+      // Tickmarkeringar var 10 nm, med längre var 50 nm
+      stroke(255);
+      strokeWeight(1);
+      for (let wl = wlMin; wl <= wlMax; wl += 10) {
+        let x = map(wl, wlMin, wlMax, 0, canvasWidth);
+        if (wl % 50 === 0) {
+          line(x, scaleY, x, scaleY - 10);
+          noStroke();
+          fill(255);
+          textSize(10);
+          textAlign(CENTER, BOTTOM);
+          text(wl + " nm", x, scaleY - 12);
+          stroke(255);
+        } else {
+          line(x, scaleY, x, scaleY - 5);
+        }
+      }
+
+      // --- Nedre remsa: svart bakgrund med tunna, färgade markeringsstreck och växelvis placerade etiketter ---
+      let markerStripY = scaleY + scaleHeight + 30;
+      fill(0);
+      rect(0, markerStripY, canvasWidth, 20);
+      for (let i = 0; i < elementLines.length; i++) {
+        let lineData = elementLines[i];
+        let wl = lineData.wavelength;
+        let x = map(wl, wlMin, wlMax, 0, canvasWidth);
+        // Rita markeringsstrecket utan vit kontur
+        stroke(wavelengthToColor(wl));
+        strokeWeight(2);
+        line(x, markerStripY, x, markerStripY + 20);
+        noStroke();
+        fill(255);
+        textSize(10);
+        if (i % 2 === 0) {
+          textAlign(CENTER, BOTTOM);
+          text(wl + " nm", x, markerStripY - 2);
+        } else {
+          textAlign(CENTER, TOP);
+          text(wl + " nm", x, markerStripY + 22);
+        }
+      }
+    }
+
+    // Hjälpfunktion: Returnerar färgen för våglängder inom intervallet 380–750 nm
+    function getColorForVisible(wavelength) {
+      let R = 0, G = 0, B = 0;
+      if (wavelength >= 380 && wavelength < 440) { 
+        R = -(wavelength - 440) / (440 - 380); 
+        G = 0.0; 
+        B = 1.0; 
+      } else if (wavelength >= 440 && wavelength < 490) { 
+        R = 0.0; 
+        G = (wavelength - 440) / (490 - 440); 
+        B = 1.0; 
+      } else if (wavelength >= 490 && wavelength < 510) { 
+        R = 0.0; 
+        G = 1.0; 
+        B = -(wavelength - 510) / (510 - 490); 
+      } else if (wavelength >= 510 && wavelength < 580) { 
+        R = (wavelength - 510) / (580 - 510); 
+        G = 1.0; 
+        B = 0.0; 
+      } else if (wavelength >= 580 && wavelength < 645) { 
+        R = 1.0; 
+        G = -(wavelength - 645) / (645 - 580); 
+        B = 0.0; 
+      } else if (wavelength >= 645 && wavelength <= 750) { 
+        R = 1.0; 
+        G = 0.0; 
+        B = 0.0; 
+      }
+      return color(R * 255, G * 255, B * 255);
+    }
+
+    // Omvandlar en våglängd (nm) till en RGB-färg.
+    // Våglängder utanför 380–750 nm returnerar svart.
+    function wavelengthToColor(wavelength) {
+      if (wavelength < 380 || wavelength > 750) {
+         return color(0, 0, 0);
+      } else {
+         return getColorForVisible(wavelength);
+      }
+    }
+  </script>
+</body>
+</html>
