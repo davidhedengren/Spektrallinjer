@@ -48,8 +48,9 @@
     </select>
     <br>
     <label for="gitterSlider">Gitterkonstant (d):</label>
-    <input type="range" id="gitterSlider" min="5" max="6000" value="1000" step="5">
-    <span id="gitterValue">1000</span> nm
+    <!-- Standardvärde ändrat till 2000 nm -->
+    <input type="range" id="gitterSlider" min="5" max="6000" value="2000" step="5">
+    <span id="gitterValue">2000</span> nm
     <br>
     <label for="tiltSlider">Gittervinkel (grader):</label>
     <input type="range" id="tiltSlider" min="-10" max="10" value="0" step="0.1">
@@ -140,12 +141,13 @@
 
     let currentElement = "hydrogen";
     let elementLines = [];
-    let gitterKonstant = 1000;
+    // Standardinställning ändrad till 2000 nm
+    let gitterKonstant = 2000;
     // Gitterpositionen är fast
     const gitterX = 300;
     // Variabel för gittervinkeln (i grader)
     let tiltAngleDeg = 0;
-    // Kryssrutorna: default är att endast första ordningen visas.
+    // Kryssrutor för ordningar
     let showSecondOrder = false;
     let showThirdOrder = false;
 
@@ -186,7 +188,7 @@
       elementLines = spectra[currentElement] || [];
     }
 
-    // Beräknar en representativ färg för lampan baserat på spektrallinjerna.
+    // Beräknar en representativ färg för lampan baserat på de spektrala linjernas färger.
     function computeLampColor() {
       let rTotal = 0, gTotal = 0, bTotal = 0;
       let n = elementLines.length;
@@ -209,7 +211,7 @@
       drawCentralMax();
       drawWavelengthScale();
 
-      // Visa aktuell ordning (alltid minst första ordningen visas)
+      // Visa aktuell ordning (minst första ordningen visas)
       fill(255);
       noStroke();
       textSize(16);
@@ -241,31 +243,23 @@
         stroke(spectralColor);
         line(lampX + 25, 250, gitterX, 250);
         
-        // Alltid första ordningen
+        // Alltid visa första ordningen
         drawOrder(lambda, 1);
-        // Om kryssruta för andra ordningen är ikryssad
-        if (showSecondOrder) {
-          drawOrder(lambda, 2);
-        }
-        // Om kryssruta för tredje ordningen är ikryssad
-        if (showThirdOrder) {
-          drawOrder(lambda, 3);
-        }
+        if (showSecondOrder) drawOrder(lambda, 2);
+        if (showThirdOrder) drawOrder(lambda, 3);
       }
     }
 
     // Funktion för att rita en viss ordning (m) för en given våglängd
     function drawOrder(lambda, m) {
       let ratio = (m * lambda) / gitterKonstant;
-      if (ratio > 1) return; // Om diffraktionsvillkoret inte är uppfyllt
+      if (ratio > 1) return;
       let theta = asin(ratio);
-      // Beräkna separata vinklar för övre och nedre strålar med tilt
       let thetaUpper = theta + tiltAngleDeg * (PI / 180);
       let thetaLower = theta - tiltAngleDeg * (PI / 180);
       let yOffsetUpper = tan(thetaUpper) * L;
       let yOffsetLower = tan(thetaLower) * L;
       let yCenter = 250;
-      // Rita övre respektive nedre stråle
       stroke(wavelengthToColor(lambda));
       line(gitterX, 250, screenX, yCenter - yOffsetUpper);
       line(gitterX, 250, screenX, yCenter + yOffsetLower);
@@ -276,15 +270,9 @@
       for (let lineData of elementLines) {
         let lambda = lineData.wavelength;
         let spectralColor = wavelengthToColor(lambda);
-        // För varje ordning, rita de horisontella diffraktionslinjerna
-        // Första ordningen visas alltid
         drawDiffractionLine(lambda, 1);
-        if (showSecondOrder) {
-          drawDiffractionLine(lambda, 2);
-        }
-        if (showThirdOrder) {
-          drawDiffractionLine(lambda, 3);
-        }
+        if (showSecondOrder) drawDiffractionLine(lambda, 2);
+        if (showThirdOrder) drawDiffractionLine(lambda, 3);
       }
     }
 
@@ -302,7 +290,7 @@
       line(screenX, yCenter + yOffsetLower, canvasWidth, yCenter + yOffsetLower);
     }
 
-    // Rita centralmaximum (m = 0) med lampans färg
+    // Centralmaximum (m = 0) ritas med lampans färg
     function drawCentralMax() {
       let lampColor = computeLampColor();
       stroke(lampColor);
@@ -311,7 +299,7 @@
       line(screenX, yCenter, canvasWidth, yCenter);
     }
 
-    // Ritning av våglängdsskalan (oförändrad från tidigare version)
+    // Ritning av våglängdsskalan
     function drawWavelengthScale() {
       let scaleHeight = 50;
       let scaleY = 460;
@@ -322,7 +310,7 @@
         stroke(wavelengthToColor(wl));
         line(x, scaleY, x, scaleY + scaleHeight);
       }
-      // Tickmarkeringar var 10 nm, med längre var 50:e nm
+      // Tickmarkeringar var 10 nm, längre var 50:e nm
       stroke(255);
       strokeWeight(1);
       for (let wl = wlMin; wl <= wlMax; wl += 10) {
@@ -363,7 +351,7 @@
       }
     }
 
-    // Hjälpfunktion: Returnerar färgen för våglängder inom 380–750 nm
+    // Hjälpfunktion: Returnerar färgen för våglängder inom intervallet 380–750 nm
     function getColorForVisible(wavelength) {
       let R = 0, G = 0, B = 0;
       if (wavelength >= 380 && wavelength < 440) { 
@@ -382,7 +370,7 @@
       return color(R * 255, G * 255, B * 255);
     }
 
-    // Omvandlar våglängd (nm) till RGB: utanför 380–750 returneras svart
+    // Omvandlar en våglängd (nm) till en RGB-färg. Våglängder utanför 380–750 nm returnerar svart.
     function wavelengthToColor(wavelength) {
       if (wavelength < 380 || wavelength > 750) {
          return color(0, 0, 0);
