@@ -5,56 +5,179 @@
   <title>Spektroskopi – Diffraktionsgitter</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      background: #111;
+      background: #0a0a0a;
       color: #eee;
-      font-family: sans-serif;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      min-height: 100vh;
+    }
+
+    #sidebar {
+      background: #151515;
+      padding: 20px;
+      width: 300px;
+      border-right: 1px solid #2a2a2a;
+      box-shadow: 4px 0 15px rgba(0,0,0,0.3);
+      overflow-y: auto;
+    }
+
+    #sidebar h1 {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      color: #6ae;
       text-align: center;
     }
-    #controls {
-      padding: 10px;
-      background: #222;
+
+    .control-group {
+      margin-bottom: 1.5rem;
     }
-    #controls label {
-      margin-right: 5px;
+
+    .control-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+      color: #aaa;
+    }
+
+    select, input[type="range"] {
+      width: 100%;
+      background: #2a2a2a;
+      border: 1px solid #3a3a3a;
+      color: #eee;
+      padding: 8px;
+      border-radius: 4px;
+      margin-bottom: 0.5rem;
+    }
+
+    input[type="range"] {
+      padding: 0;
+      height: 6px;
+      background: #3a3a3a;
+      border-radius: 3px;
+      -webkit-appearance: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      background: #6ae;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .value-display {
+      font-size: 0.9rem;
+      color: #6ae;
+      margin-bottom: 1rem;
+    }
+
+    .checkbox-group {
+      margin: 10px 0;
+    }
+
+    .checkbox-group label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+
+    .checkbox-group label:hover {
+      background: rgba(255,255,255,0.05);
+    }
+
+    input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: #6ae;
+    }
+
+    #canvas-container {
+      flex: 1;
+      padding: 20px;
+      position: relative;
+    }
+
+    .order-indicator {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(0,0,0,0.7);
+      padding: 10px 15px;
+      border-radius: 6px;
+      border: 1px solid #3a3a3a;
+      backdrop-filter: blur(3px);
     }
   </style>
 </head>
 <body>
-  <h1>Spektroskopi – Diffraktionsgitter</h1>
-  <div id="controls">
-    <label for="elementSelect">Välj ämne:</label>
-    <select id="elementSelect">
-      <option value="hydrogen">Väte (H)</option>
-      <option value="mercury">Kvicksilver (Hg)</option>
-      <option value="sodium">Natrium (Na)</option>
-      <option value="neon">Neon (Ne)</option>
-      <option value="cadmium">Kadmium (Cd)</option>
-      <option value="helium">Helium (He)</option>
-      <option value="calcium">Kalcium (Ca)</option>
-      <option value="argon">Argon (Ar)</option>
-      <option value="lithium">Litium (Li)</option>
-      <option value="magnesium">Magnesium (Mg)</option>
-    </select>
-    <br>
-    <label for="gitterSlider">Gitterkonstant (d):</label>
-    <!-- Standard inställt på 2000 nm -->
-    <input type="range" id="gitterSlider" min="5" max="6000" value="2000" step="5">
-    <span id="gitterValue">2000</span> nm
-    <br>
-    <label for="tiltSlider">Gittervinkel (grader):</label>
-    <input type="range" id="tiltSlider" min="-10" max="10" value="0" step="0.1">
-    <span id="tiltValue">0</span>
-    <br>
-    <label for="secondOrder">Andra ordningen</label>
-    <input type="checkbox" id="secondOrder">
-    <br>
-    <label for="thirdOrder">Tredje ordningen</label>
-    <input type="checkbox" id="thirdOrder">
+  <div id="sidebar">
+    <h1>Spektroskopi – Diffraktionsgitter</h1>
+    
+    <div class="control-group">
+      <label for="elementSelect">Välj ämne</label>
+      <select id="elementSelect">
+        <option value="hydrogen">Väte (H)</option>
+        <option value="mercury">Kvicksilver (Hg)</option>
+        <option value="sodium">Natrium (Na)</option>
+        <option value="neon">Neon (Ne)</option>
+        <option value="cadmium">Kadmium (Cd)</option>
+        <option value="helium">Helium (He)</option>
+        <option value="calcium">Kalcium (Ca)</option>
+        <option value="argon">Argon (Ar)</option>
+        <option value="lithium">Litium (Li)</option>
+        <option value="magnesium">Magnesium (Mg)</option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <label>Gitterkonstant (d)</label>
+      <input type="range" id="gitterSlider" min="5" max="6000" value="2000" step="5">
+      <div class="value-display">
+        <span id="gitterValue">2000</span> nm
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label>Gittervinkel</label>
+      <input type="range" id="tiltSlider" min="-10" max="10" value="0" step="0.1">
+      <div class="value-display">
+        <span id="tiltValue">0</span>°
+      </div>
+    </div>
+
+    <div class="control-group">
+      <div class="checkbox-group">
+        <label>
+          <input type="checkbox" id="secondOrder">
+          Visa andra ordningen
+        </label>
+      </div>
+      <div class="checkbox-group">
+        <label>
+          <input type="checkbox" id="thirdOrder">
+          Visa tredje ordningen
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <div id="canvas-container">
+    <div class="order-indicator" id="orderIndicator">Ordning: 1</div>
   </div>
 
   <script>
-    /* Färgkarta: definierar RGB-värden för de angivna färgerna */
     const colorMapping = {
       "Röd": [255, 0, 0],
       "Blågrön": [0, 200, 200],
@@ -67,86 +190,90 @@
       "UV": [75, 0, 130]
     };
 
-    /* Spektratabell med de angivna värdena */
     const spectra = {
       hydrogen: [
-        { wavelength: 656.3, color: "Röd", intensity: 75 },
-        { wavelength: 486.1, color: "Blågrön", intensity: 75 },
-        { wavelength: 434.0, color: "Blå", intensity: 50 },
-        { wavelength: 410.2, color: "Violett", intensity: 25 }
+        { wavelength: 656.3, color: "Röd", intensity: 75, comment: "Hα-linjen" },
+        { wavelength: 486.1, color: "Blågrön", intensity: 75, comment: "Hβ-linjen" },
+        { wavelength: 434.0, color: "Blå", intensity: 50, comment: "Hγ-linjen" },
+        { wavelength: 410.2, color: "Violett", intensity: 25, comment: "Hδ-linjen" }
       ],
       mercury: [
-        { wavelength: 404.7, color: "Violett", intensity: 50 },
-        { wavelength: 435.8, color: "Blå", intensity: 75 },
-        { wavelength: 546.1, color: "Grön", intensity: 100 },
-        { wavelength: 577.0, color: "Gul", intensity: 50 },
-        { wavelength: 579.0, color: "Gul", intensity: 50 }
+        { wavelength: 404.7, color: "Violett", intensity: 50, comment: "" },
+        { wavelength: 435.8, color: "Blå", intensity: 75, comment: "" },
+        { wavelength: 546.1, color: "Grön", intensity: 100, comment: "" },
+        { wavelength: 577.0, color: "Gul", intensity: 50, comment: "" },
+        { wavelength: 579.0, color: "Gul", intensity: 50, comment: "" }
       ],
       sodium: [
-        { wavelength: 589.0, color: "Gul", intensity: 100 },
-        { wavelength: 589.6, color: "Gul", intensity: 100 }
+        { wavelength: 589.0, color: "Gul", intensity: 100, comment: "D2-linjen" },
+        { wavelength: 589.6, color: "Gul", intensity: 100, comment: "D1-linjen" }
       ],
       neon: [
-        { wavelength: 633.4, color: "Röd", intensity: 100 },
-        { wavelength: 667.8, color: "Röd", intensity: 100 },
-        { wavelength: 703.2, color: "Djupröd", intensity: 75 }
+        { wavelength: 633.4, color: "Röd", intensity: 100, comment: "" },
+        { wavelength: 667.8, color: "Röd", intensity: 100, comment: "" },
+        { wavelength: 703.2, color: "Djupröd", intensity: 75, comment: "" }
       ],
       cadmium: [
-        { wavelength: 467.8, color: "Blå", intensity: 75 },
-        { wavelength: 508.6, color: "Grön", intensity: 75 },
-        { wavelength: 643.8, color: "Röd", intensity: 75 }
+        { wavelength: 467.8, color: "Blå", intensity: 75, comment: "" },
+        { wavelength: 508.6, color: "Grön", intensity: 75, comment: "" },
+        { wavelength: 643.8, color: "Röd", intensity: 75, comment: "" }
       ],
       helium: [
-        { wavelength: 587.6, color: "Gul", intensity: 100 },
-        { wavelength: 447.1, color: "Blå", intensity: 75 },
-        { wavelength: 667.8, color: "Röd", intensity: 75 }
+        { wavelength: 587.6, color: "Gul", intensity: 100, comment: "" },
+        { wavelength: 447.1, color: "Blå", intensity: 75, comment: "" },
+        { wavelength: 667.8, color: "Röd", intensity: 75, comment: "" }
       ],
       calcium: [
-        { wavelength: 393.4, color: "Violett", intensity: 75 },
-        { wavelength: 396.8, color: "Violett", intensity: 75 },
-        { wavelength: 422.7, color: "Blå", intensity: 75 }
+        { wavelength: 393.4, color: "Violett", intensity: 75, comment: "K-linjen" },
+        { wavelength: 396.8, color: "Violett", intensity: 75, comment: "H-linjen" },
+        { wavelength: 422.7, color: "Blå", intensity: 75, comment: "" }
       ],
       argon: [
-        { wavelength: 696.5, color: "Röd", intensity: 75 },
-        { wavelength: 706.7, color: "Röd", intensity: 75 },
-        { wavelength: 738.4, color: "Röd", intensity: 75 }
+        { wavelength: 696.5, color: "Röd", intensity: 75, comment: "" },
+        { wavelength: 706.7, color: "Röd", intensity: 75, comment: "" },
+        { wavelength: 738.4, color: "Röd", intensity: 75, comment: "" }
       ],
       lithium: [
-        { wavelength: 670.8, color: "Röd", intensity: 100 },
-        { wavelength: 610.4, color: "Orange", intensity: 50 }
+        { wavelength: 670.8, color: "Röd", intensity: 100, comment: "" },
+        { wavelength: 610.4, color: "Orange", intensity: 50, comment: "" }
       ],
       magnesium: [
-        { wavelength: 279.55, color: "UV", intensity: 75 },
-        { wavelength: 279.81, color: "UV", intensity: 75 },
-        { wavelength: 518.4, color: "Grön", intensity: 75 }
+        { wavelength: 279.55, color: "UV", intensity: 75, comment: "h-linjen" },
+        { wavelength: 279.81, color: "UV", intensity: 75, comment: "k-linjen" },
+        { wavelength: 518.4, color: "Grön", intensity: 75, comment: "" }
       ]
     };
 
-    // Globala variabler
     let currentElement = "hydrogen";
     let elementLines = [];
-    // Standard gitterkonstant: 2000 nm
     let gitterKonstant = 2000;
-    const gitterX = 300;  // Fast position
-    let tiltAngleDeg = 0;  // Gittervinkel (grader)
+    const gitterX = 300;
+    let tiltAngleDeg = 0;
     let showSecondOrder = false;
     let showThirdOrder = false;
 
-    // Canvasparametrar
     const canvasWidth = 800, canvasHeight = 600;
     const lampX = 100, screenX = 700;
     const L = 400;
 
-    // Returnerar en p5.color med alfavärde inställt enligt intensitet (0–100 → 0–255)
+    function getAlphaFromIntensity(I) {
+      if (I === 25) return 38;
+      else if (I === 50) return 77;
+      else if (I === 75) return 179;
+      else if (I === 100) return 255;
+      else return map(I, 25, 100, 38, 255);
+    }
+
     function getLineColor(lineData) {
       let base = colorMapping[lineData.color];
       if (!base) base = [255, 255, 255];
-      let alpha = (lineData.intensity / 100) * 255;
+      let alpha = getAlphaFromIntensity(lineData.intensity);
       return color(base[0], base[1], base[2], alpha);
     }
 
     function setup() {
-      createCanvas(canvasWidth, canvasHeight);
+      const canvas = createCanvas(canvasWidth, canvasHeight);
+      canvas.parent('canvas-container');
       updateElementLines();
 
       document.getElementById("elementSelect").addEventListener("change", function() {
@@ -154,30 +281,40 @@
         updateElementLines();
       });
 
-      document.getElementById("gitterSlider").addEventListener("input", function() {
+      const gitterSlider = document.getElementById("gitterSlider");
+      gitterSlider.addEventListener("input", function() {
         gitterKonstant = parseInt(this.value);
         document.getElementById("gitterValue").innerText = gitterKonstant;
       });
 
-      document.getElementById("tiltSlider").addEventListener("input", function() {
+      const tiltSlider = document.getElementById("tiltSlider");
+      tiltSlider.addEventListener("input", function() {
         tiltAngleDeg = parseFloat(this.value);
         document.getElementById("tiltValue").innerText = tiltAngleDeg;
       });
-      
+
       document.getElementById("secondOrder").addEventListener("change", function() {
         showSecondOrder = this.checked;
+        updateOrderIndicator();
       });
       
       document.getElementById("thirdOrder").addEventListener("change", function() {
         showThirdOrder = this.checked;
+        updateOrderIndicator();
       });
+
+      updateOrderIndicator();
+    }
+
+    function updateOrderIndicator() {
+      const orders = ["1" + (showSecondOrder ? ", 2" : "") + (showThirdOrder ? ", 3" : "")];
+      document.getElementById("orderIndicator").textContent = `Ordning: ${orders}`;
     }
 
     function updateElementLines() {
       elementLines = spectra[currentElement] || [];
     }
 
-    // Beräknar lampans färg som ett intensitetsviktat medelvärde
     function computeLampColor() {
       let rTotal = 0, gTotal = 0, bTotal = 0, totIntensity = 0;
       for (let lineData of elementLines) {
@@ -199,16 +336,6 @@
       drawDiffractionPatterns();
       drawCentralMax();
       drawWavelengthScale();
-
-      // Visa vilka ordningar som visas (minst första ordningen visas)
-      fill(255);
-      noStroke();
-      textSize(16);
-      textAlign(RIGHT, TOP);
-      let ordersText = "Ordning: 1" +
-                       (showSecondOrder ? ", 2" : "") +
-                       (showThirdOrder ? ", 3" : "");
-      text(ordersText, canvasWidth - 10, 10);
     }
 
     function drawLamp() {
@@ -222,13 +349,11 @@
       rect(gitterX, 200, 10, 100);
     }
 
-    // Rita diffraktionsstrålar – endast för våglängder 400–750 nm (de "synliga")
     function drawStrålar() {
-      strokeWeight(2);
       for (let lineData of elementLines) {
         let lambda = lineData.wavelength;
-        // Om linjen ligger utanför det synliga intervallet (400–750 nm) ritas den inte
         if (lambda < 400 || lambda > 750) continue;
+        strokeWeight(getStrokeWeight(lineData));
         let lineCol = getLineColor(lineData);
         stroke(lineCol);
         line(lampX + 25, 250, gitterX, 250);
@@ -238,7 +363,6 @@
       }
     }
 
-    // Rita en viss ordning (m) för en given linje, endast om våglängden är 400–750 nm
     function drawOrder(lineData, m) {
       let lambda = lineData.wavelength;
       if (lambda < 400 || lambda > 750) return;
@@ -249,16 +373,33 @@
       let thetaLower = theta - tiltAngleDeg * (PI / 180);
       let yOffsetUpper = tan(thetaUpper) * L;
       let yOffsetLower = tan(thetaLower) * L;
+      if (currentElement === "sodium") {
+        if (abs(lambda - 589.0) < 0.2) {
+          yOffsetUpper -= 1;
+          yOffsetLower -= 1;
+        } else if (abs(lambda - 589.6) < 0.2) {
+          yOffsetUpper += 1;
+          yOffsetLower += 1;
+        }
+      }
+      if (currentElement === "mercury" && lineData.color === "Gul") {
+        if (abs(lambda - 577.0) < 0.2) {
+          yOffsetUpper -= 1;
+          yOffsetLower -= 1;
+        } else if (abs(lambda - 579.0) < 0.2) {
+          yOffsetUpper += 1;
+          yOffsetLower += 1;
+        }
+      }
       let yCenter = 250;
       stroke(getLineColor(lineData));
+      strokeWeight(getStrokeWeight(lineData));
       line(gitterX, 250, screenX, yCenter - yOffsetUpper);
       line(gitterX, 250, screenX, yCenter + yOffsetLower);
     }
 
     function drawDiffractionPatterns() {
-      strokeWeight(3);
       for (let lineData of elementLines) {
-        // Rita endast diffraktionsmönster för våglängder 400–750 nm
         if (lineData.wavelength < 400 || lineData.wavelength > 750) continue;
         drawDiffractionLine(lineData, 1);
         if (showSecondOrder) drawDiffractionLine(lineData, 2);
@@ -277,11 +418,11 @@
       let yOffsetLower = tan(thetaLower) * L;
       let yCenter = 250;
       stroke(getLineColor(lineData));
+      strokeWeight(getStrokeWeight(lineData) + 1);
       line(screenX, yCenter - yOffsetUpper, canvasWidth, yCenter - yOffsetUpper);
       line(screenX, yCenter + yOffsetLower, canvasWidth, yCenter + yOffsetLower);
     }
 
-    // Rita centralmaximum (m = 0)
     function drawCentralMax() {
       let lampColor = computeLampColor();
       stroke(lampColor);
@@ -290,19 +431,20 @@
       line(screenX, yCenter, canvasWidth, yCenter);
     }
 
-    // Ritning av våglängdsskalan – alla linjer (även utanför 400–750 nm) visas med fasta färger
+    function getStrokeWeight(lineData) {
+      return constrain(map(lineData.intensity, 25, 100, 1, 4), 1, 4);
+    }
+
     function drawWavelengthScale() {
       let scaleHeight = 50;
       let scaleY = 460;
       let wlMin = 250, wlMax = 1000;
       
-      // Övre remsa: regnbågsspektrum – använder wavelengthToColor
       for (let x = 0; x < canvasWidth; x++) {
         let wl = map(x, 0, canvasWidth, wlMin, wlMax);
         stroke(wavelengthToColor(wl));
         line(x, scaleY, x, scaleY + scaleHeight);
       }
-      // Tickmarkeringar var 10 nm, längre vid var 50:e nm
       stroke(255);
       strokeWeight(1);
       for (let wl = wlMin; wl <= wlMax; wl += 10) {
@@ -319,7 +461,6 @@
           line(x, scaleY, x, scaleY - 5);
         }
       }
-      // Nedre remsa: svart bakgrund med tunna, färgade markeringsstreck och växelvis placerade etiketter
       let markerStripY = scaleY + scaleHeight + 30;
       fill(0);
       rect(0, markerStripY, canvasWidth, 20);
@@ -327,8 +468,18 @@
         let lineData = elementLines[i];
         let wl = lineData.wavelength;
         let x = map(wl, wlMin, wlMax, 0, canvasWidth);
+        if (currentElement === "sodium" && elementLines.length === 2) {
+          if (abs(wl - 589.0) < 0.2) { x -= 2; strokeWeight(1); }
+          else if (abs(wl - 589.6) < 0.2) { x += 2; strokeWeight(1); }
+          else { strokeWeight(2); }
+        } else if (currentElement === "mercury" && lineData.color === "Gul") {
+          if (abs(wl - 577.0) < 0.2) { x -= 2; strokeWeight(1); }
+          else if (abs(wl - 579.0) < 0.2) { x += 2; strokeWeight(1); }
+          else { strokeWeight(2); }
+        } else {
+          strokeWeight(2);
+        }
         stroke(wavelengthToColor(wl));
-        strokeWeight(2);
         line(x, markerStripY, x, markerStripY + 20);
         noStroke();
         fill(255);
@@ -343,43 +494,29 @@
       }
     }
 
-    // Returnerar färgen för våglängder inom 380–750 nm (synliga)
     function getColorForVisible(wavelength) {
       let R = 0, G = 0, B = 0;
       if (wavelength >= 380 && wavelength < 440) { 
-        R = -(wavelength - 440) / (440 - 380); 
-        G = 0.0; 
-        B = 1.0; 
+        R = -(wavelength - 440) / (440 - 380); G = 0.0; B = 1.0; 
       } else if (wavelength >= 440 && wavelength < 490) { 
-        R = 0.0; 
-        G = (wavelength - 440) / (490 - 440); 
-        B = 1.0; 
+        R = 0.0; G = (wavelength - 440) / (490 - 440); B = 1.0; 
       } else if (wavelength >= 490 && wavelength < 510) { 
-        R = 0.0; 
-        G = 1.0; 
-        B = -(wavelength - 510) / (510 - 490); 
+        R = 0.0; G = 1.0; B = -(wavelength - 510) / (510 - 490); 
       } else if (wavelength >= 510 && wavelength < 580) { 
-        R = (wavelength - 510) / (580 - 510); 
-        G = 1.0; 
-        B = 0.0; 
+        R = (wavelength - 510) / (580 - 510); G = 1.0; B = 0.0; 
       } else if (wavelength >= 580 && wavelength < 645) { 
-        R = 1.0; 
-        G = -(wavelength - 645) / (645 - 580); 
-        B = 0.0; 
+        R = 1.0; G = -(wavelength - 645) / (645 - 580); B = 0.0; 
       } else if (wavelength >= 645 && wavelength <= 750) { 
-        R = 1.0; 
-        G = 0.0; 
-        B = 0.0; 
+        R = 1.0; G = 0.0; B = 0.0; 
       }
       return color(R * 255, G * 255, B * 255);
     }
 
-    // Modifierad funktion: för våglängder utanför 400–750 nm, returneras fasta färger (UV: violett, IR: röd)
     function wavelengthToColor(wavelength) {
       if (wavelength < 400) {
-         return color(238, 130, 238);  // Violett (UV)
+         return color(238, 130, 238);
       } else if (wavelength > 750) {
-         return color(255, 0, 0);      // Röd (IR)
+         return color(255, 0, 0);
       } else {
          return getColorForVisible(wavelength);
       }
